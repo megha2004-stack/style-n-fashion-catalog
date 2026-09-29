@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #fbe9ee;
+  --paper-raised: #ffffff;
+  --ink: #211c19;
+  --ink-soft: #5b5349;
+  --marigold: #c68a2e;
+  --marigold-dark: #a8721f;
+  --maroon: #7a1e2c;
+  --teal: #1f5c55;
+  --thread: #c9bfa9;
+  --thread-light: #e7e0d2;
+
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  border-color: var(--thread-light);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+html[data-scroll-behavior] { }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+.seam {
+  border: none;
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--thread) 0,
+    var(--thread) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.stitch-link {
+  position: relative;
+  text-decoration: none;
+}
+.stitch-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -2px;
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    currentColor 0,
+    currentColor 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  transition: right 0.25s ease;
+}
+.stitch-link:hover::after {
+  right: 0;
+}
+
+/*
+  Design grid — Pinterest-style masonry using CSS columns, so photos
+  keep their natural aspect ratio and stagger into a mosaic instead of
+  being cropped into identical boxes.
+*/
+.masonry {
+  column-count: 2;
+  column-gap: 0.75rem;
+}
+.masonry > * {
+  margin-bottom: 0.75rem;
+}
+.masonry img {
+  max-height: 420px;
+  object-fit: cover;
+}
+@media (min-width: 640px) {
+  .masonry { column-count: 3; column-gap: 1rem; }
+  .masonry > * { margin-bottom: 1rem; }
+}
+@media (min-width: 1024px) {
+  .masonry { column-count: 4; }
+}
+
+/*
+  Embroidery hoop — hidden by default, snaps into place around the
+  photo when the card is hovered or focused. The "back" easing curve
+  gives it a slight overshoot, like a hoop being clicked shut.
+*/
+.embroidery-hoop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.7) rotate(-14deg);
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+a:hover .embroidery-hoop,
+a:focus-visible .embroidery-hoop {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Hanging thread with buttons in the hero, animated entirely via JS
+   (idle sway + cursor-proximity tilt) rather than CSS keyframes */
+.hanging-thread {
+  flex-shrink: 0;
+}
+
+/*
+  Scissors loader — rebuilt so it reads as an actual cutting action:
+  - the blades genuinely rotate open and closed around the pivot
+    (not just a static icon sliding by)
+  - the cut reveal advances in discrete steps() rather than a smooth
+    fade, so each snip visibly removes one dash rather than the line
+    fading away continuously
+  - travel and snip-rate are tuned so a blade closes roughly once per
+    dash segment as it crosses the thread
+*/
+.scissors-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.scissors-loader-svg {
+  overflow: visible;
+}
+.scissors-cut-mask {
+  animation: scissors-cut-steps 1.8s steps(15, jump-end) infinite;
+}
+.scissors-travel {
+  animation: scissors-travel 1.8s linear infinite;
+}
+.scissors-blade-top {
+  transform-origin: 10px 0px;
+  animation: scissors-snip-top 0.3s ease-in-out infinite;
+}
+.scissors-blade-bottom {
+  transform-origin: 10px 0px;
+  animation: scissors-snip-bottom 0.3s ease-in-out infinite;
+}
+@keyframes scissors-cut-steps {
+  0% { width: 0; }
+  100% { width: 210px; }
+}
+@keyframes scissors-travel {
+  0% { transform: translateX(4px); }
+  100% { transform: translateX(196px); }
+}
+@keyframes scissors-snip-top {
+  0%, 100% { transform: rotate(-9deg); }
+  50% { transform: rotate(9deg); }
+}
+@keyframes scissors-snip-bottom {
+  0%, 100% { transform: rotate(9deg); }
+  50% { transform: rotate(-9deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scissors-cut-mask,
+  .scissors-travel,
+  .scissors-blade-top,
+  .scissors-blade-bottom {
+    animation: none;
+  }
+}
+
+/* Faint decorative thread texture sitting behind the mobile design grid */
+.thread-texture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.14;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/*
+  Category rail — a single horizontally-scrolling row of pills.
+  Replaces the old bulky category card grid, which ate a full
+  screen of vertical space on mobile before any designs were visible.
+*/
+.category-rail {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.category-rail::-webkit-scrollbar { display: none; }
+
+.category-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  border: 1px solid var(--thread);
+  background: #fff;
+  color: var(--ink);
+}
+
+.order-tag {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+::selection {
+  background: var(--marigold);
+  color: var(--paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

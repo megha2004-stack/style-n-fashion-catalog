@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Category {
+  id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String     @unique
+  slug        String     @unique
+  parentId    String?    @map("parent_id") @db.Uuid
+  description String?
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id], onUpdate: NoAction)
+  children    Category[] @relation("CategoryToSubcategory")
+  designs     Design[]   @relation("DesignCategory")
+  subDesigns  Design[]   @relation("DesignSubcategory")
+
+  @@map("categories")
+}
+
+model Tag {
+  id         String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String      @unique
+  slug       String      @unique
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  designTags DesignTag[]
+
+  @@map("tags")
+}
+
+model Admin {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("admins")
+}
+
+model Design {
+  id            String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title         String
+  slug          String                   @unique
+  description   String?
+  categoryId    String                   @map("category_id") @db.Uuid
+  subcategoryId String?                  @map("subcategory_id") @db.Uuid
+  fabric        String?
+  neckType      String?                  @map("neck_type")
+  sleeveType    String?                  @map("sleeve_type")
+  color         String?
+  occasion      String?
+  workType      String?                  @map("work_type")
+  imagePath     String                   @map("image_path")
+  imageAlt      String                   @map("image_alt")
+  isFeatured    Boolean                  @default(false) @map("is_featured")
+  viewCount     Int                      @default(0) @map("view_count")
+  searchVector  Unsupported("tsvector")? @map("search_vector")
+  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tags          DesignTag[]
+  category      Category                 @relation("DesignCategory", fields: [categoryId], references: [id], onUpdate: NoAction)
+  subcategory   Category?                @relation("DesignSubcategory", fields: [subcategoryId], references: [id], onUpdate: NoAction)
+
+  @@index([categoryId], map: "idx_designs_category")
+  @@index([color], map: "idx_designs_color")
+  @@index([createdAt(sort: Desc)], map: "idx_designs_created_at")
+  @@index([fabric], map: "idx_designs_fabric")
+  @@index([neckType], map: "idx_designs_neck_type")
+  @@index([occasion], map: "idx_designs_occasion")
+  @@index([searchVector], map: "idx_designs_search_vector", type: Gin)
+  @@index([sleeveType], map: "idx_designs_sleeve_type")
+  @@index([subcategoryId], map: "idx_designs_subcategory")
+  @@index([workType], map: "idx_designs_work_type")
+  @@map("designs")
+}
+
+model DesignTag {
+  designId String @map("design_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+  design   Design @relation(fields: [designId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([designId, tagId])
+  @@index([tagId], map: "idx_design_tags_tag")
+  @@map("design_tags")
+}
